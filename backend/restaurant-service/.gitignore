@@ -1,0 +1,22 @@
+# Target / Build Output
+target/
+*.class
+
+# IDE & Editor Files
+.idea/
+*.iml
+.classpath
+.project
+.settings/
+.vscode/
+*.swp
+*.swo
+
+# OS Files
+.DS_Store
+Thumbs.db
+
+# Logs & Environment
+*.log
+.env
+.env.local

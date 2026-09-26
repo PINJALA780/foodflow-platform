@@ -1,0 +1,60 @@
+# ==============================
+# Node / React / Vite
+# ==============================
+frontend/node_modules/
+frontend/dist/
+frontend/.vite/
+frontend/.env
+frontend/.env.*
+!frontend/.env.example
+
+# ==============================
+# Java / Maven / Spring Boot
+# ==============================
+**/target/
+**/.mvn/
+*.class
+
+# ==============================
+# Environment / Secrets
+# ==============================
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.crt
+
+# ==============================
+# IDE
+# ==============================
+.idea/
+.vscode/
+*.iml
+
+# ==============================
+# OS
+# ==============================
+.DS_Store
+Thumbs.db
+
+# ==============================
+# Logs
+# ==============================
+*.log
+logs/
+
+# ==============================
+# Terraform
+# ==============================
+**/.terraform/
+*.tfstate
+*.tfstate.*
+*.tfvars
+!*.tfvars.example
+
+# ==============================
+# Temporary files
+# ==============================
+*.tmp
+*.swp
