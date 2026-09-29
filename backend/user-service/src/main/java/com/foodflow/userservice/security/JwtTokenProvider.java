@@ -1,7 +1,6 @@
 package com.foodflow.userservice.security;
 
 import io.jsonwebtoken.Claims;
-import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
@@ -29,7 +28,10 @@ public class JwtTokenProvider {
     public JwtTokenProvider(
             @Value("${application.jwt.secret}") String secret,
             @Value("${application.jwt.expiration-ms}") long expirationMs) {
-        this.signingKey = Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
+
+        this.signingKey = Keys.hmacShaKeyFor(
+                secret.getBytes(StandardCharsets.UTF_8)
+        );
         this.expirationMs = expirationMs;
     }
 
@@ -40,34 +42,69 @@ public class JwtTokenProvider {
     public String generateAccessToken(UserDetails userDetails) {
         Map<String, Object> claims = new HashMap<>();
         claims.put("type", "access");
-        return buildToken(claims, userDetails.getUsername(), expirationMs);
+
+        return buildToken(
+                claims,
+                userDetails.getUsername(),
+                expirationMs
+        );
     }
 
-    public String generateAccessToken(UserDetails userDetails, Map<String, Object> extraClaims) {
+    public String generateAccessToken(
+            UserDetails userDetails,
+            Map<String, Object> extraClaims) {
+
         extraClaims.put("type", "access");
-        return buildToken(extraClaims, userDetails.getUsername(), expirationMs);
+
+        return buildToken(
+                extraClaims,
+                userDetails.getUsername(),
+                expirationMs
+        );
     }
 
-    private String buildToken(Map<String, Object> extraClaims, String subject, long expirationMillis) {
-        Instant now = Instant.now();
+    private String buildToken(
+            Map<String, Object> extraClaims,
+            String subject,
+            long expirationMillis) {
+
+        Instant issuedAt = Instant.now();
+        Instant expiration = issuedAt.plusMillis(expirationMillis);
+
         return Jwts.builder()
                 .claims(extraClaims)
                 .subject(subject)
-                .issuedAt(Date.from(now))
-                .expiration(Date.from(now.plusMillis(expirationMillis)))
+                .issuedAt(toJwtDate(issuedAt))
+                .expiration(toJwtDate(expiration))
                 .id(UUID.randomUUID().toString())
                 .signWith(signingKey)
                 .compact();
+    }
+
+    /*
+     * JJWT 0.12.x exposes issuedAt() and expiration() using
+     * java.util.Date. The application uses java.time.Instant everywhere
+     * else, so this method is the single compatibility boundary.
+     */
+    @SuppressWarnings("java:S2143")
+    private Date toJwtDate(Instant instant) {
+        return Date.from(instant);
     }
 
     // ---------------------------------------------------------------- //
     //                         Token Validation                          //
     // ---------------------------------------------------------------- //
 
-    public boolean isTokenValid(String token, UserDetails userDetails) {
+    public boolean isTokenValid(
+            String token,
+            UserDetails userDetails) {
+
         try {
             final String username = extractUsername(token);
-            return username.equals(userDetails.getUsername()) && !isTokenExpired(token);
+
+            return username.equals(userDetails.getUsername())
+                    && !isTokenExpired(token);
+
         } catch (JwtException | IllegalArgumentException e) {
             log.warn("Invalid JWT token: {}", e.getMessage());
             return false;
@@ -83,15 +120,26 @@ public class JwtTokenProvider {
     // ---------------------------------------------------------------- //
 
     public String extractUsername(String token) {
-        return extractClaim(token, Claims::getSubject);
+        return extractClaim(
+                token,
+                Claims::getSubject
+        );
     }
 
     public Instant extractExpiration(String token) {
-        return extractClaim(token, claims -> claims.getExpiration().toInstant());
+        return extractClaim(
+                token,
+                claims -> claims.getExpiration().toInstant()
+        );
     }
 
-    public <T> T extractClaim(String token, Function<Claims, T> claimsResolver) {
-        return claimsResolver.apply(extractAllClaims(token));
+    public <T> T extractClaim(
+            String token,
+            Function<Claims, T> claimsResolver) {
+
+        return claimsResolver.apply(
+                extractAllClaims(token)
+        );
     }
 
     private Claims extractAllClaims(String token) {

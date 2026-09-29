@@ -1,6 +1,5 @@
 package com.foodflow.userservice.service.impl;
 
-import com.foodflow.userservice.exception.UserNotFoundException;
 import com.foodflow.userservice.repository.UserRepository;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;

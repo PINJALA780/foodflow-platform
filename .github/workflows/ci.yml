@@ -6,6 +6,7 @@ on:
       - main
       - develop
       - 'feature/**'
+
   pull_request:
     branches:
       - main
@@ -15,6 +16,11 @@ permissions:
   contents: read
 
 jobs:
+
+  # ============================================================
+  # FRONTEND
+  # ============================================================
+
   frontend:
     name: Frontend Build
     runs-on: ubuntu-latest
@@ -24,6 +30,7 @@ jobs:
         working-directory: frontend
 
     steps:
+
       - name: Checkout source
         uses: actions/checkout@v4
 
@@ -40,12 +47,19 @@ jobs:
       - name: Build frontend
         run: npm run build
 
+
+  # ============================================================
+  # BACKEND
+  # ============================================================
+
   backend:
-    name: Backend Build and Test
+    name: Backend - ${{ matrix.service }}
+
     runs-on: ubuntu-latest
 
     strategy:
       fail-fast: false
+
       matrix:
         service:
           - user-service
@@ -60,15 +74,51 @@ jobs:
         working-directory: backend/${{ matrix.service }}
 
     steps:
+
       - name: Checkout source
         uses: actions/checkout@v4
 
-      - name: Setup Java
+
+      # ----------------------------------------------------------
+      # JAVA
+      # ----------------------------------------------------------
+
+      - name: Setup Java 17
         uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: '17'
           cache: maven
 
+
+      # ----------------------------------------------------------
+      # BUILD + TEST + JACOCO
+      # ----------------------------------------------------------
+
       - name: Build and test
         run: mvn -B clean verify
+
+
+      # ----------------------------------------------------------
+      # SONARQUBE
+      # ----------------------------------------------------------
+
+      - name: SonarQube analysis
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
+        run: |
+          mvn -B sonar:sonar \
+            -Dsonar.host.url="${SONAR_HOST_URL}" \
+            -Dsonar.token="${SONAR_TOKEN}"
+
+
+      # ----------------------------------------------------------
+      # JACOCO REPORT
+      # ----------------------------------------------------------
+
+      - name: Upload JaCoCo report
+        uses: actions/upload-artifact@v4
+        with:
+          name: jacoco-${{ matrix.service }}
+          path: backend/${{ matrix.service }}/target/site/jacoco/
